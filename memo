@@ -1,0 +1,90 @@
+ステップ5：useRefでDOM要素を参照して値を利用する
+このステップの内容は、ステップ4終了時の状態から続けて実装します。
+
+書籍検索ダイアログ(BookSearchDialog.tsx)では、APIの検索条件として使用するタイトル、著者名のテキストを取得するために、onChangeイベントを拾ってステート変数に格納していました。
+
+BookSearchDialog.tsx
+
+  const handleTitleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setTitle(e.target.value);
+  };
+
+  const handleAuthorInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setAuthor(e.target.value);
+  };
+
+しかし、これらの値は検索ボタンクリック時にしか使わないので、いちいちonChangeイベントを拾うのも無駄ですし、何より面倒くさいです。他に方法はないでしょうか。
+
+このような場合、useRefフックを利用して、DOM要素に対する参照を作成すると便利です。
+まずはインポートしましょう。
+
+BookSearchDialog.tsx
+
+import React, { useState, useEffect, useRef } from "react";
+
+title author のステート変数はいらなくなるので消して、代わりにuseRefで参照を取得します。
+
+BookSearchDialog.tsx
+
+const BookSearchDialog = (props: BookSearchDialogProps) => {
+  const [books, setBooks] = useState([] as BookDescription[]);
+  //const [title, setTitle] = useState("");
+  //const [author, setAuthor] = useState("");
+  const titleRef = useRef<HTMLInputElement>(null);
+  const authorRef = useRef<HTMLInputElement>(null);
+
+ステート変数の値を参照していた箇所は、参照オブジェクトのcurrentプロパティ経由で取得します。ここではインプット要素を参照しているので、valueで値を取得します。
+
+BookSearchDialog.tsx
+
+  useEffect(() => {
+    if (isSearching) {
+      const url = buildSearchUrl(titleRef.current!.value, authorRef.current!.value, props.maxResults);
+      fetch(url)
+
+onChangeイベントのハンドラ関数も不要になったので削除し、handleSearchClick内のステート変数使用箇所も修正します。
+
+BookSearchDialog.tsx
+
+  // const handleTitleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  //   setTitle(e.target.value);
+  // };
+
+  // const handleAuthorInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  //   setAuthor(e.target.value);
+  // };
+
+  const handleSearchClick = () => {
+    if (!titleRef.current!.value && !authorRef.current!.value) {
+      alert("条件を入力してください");
+      return;
+    }
+    setIsSearching(true);
+  };
+
+肝心なのはJSXの部分。タイトル、著者名のinputのonChange属性は不要なので削除して、代わりにref属性を指定します。
+これにより、DOM要素とuseRefで取得したrefとが紐付けられます。
+
+BookSearchDialog.tsx
+
+  return (
+    <div className="dialog">
+      <div className="operation">
+        <div className="conditions">
+          <input type="text" ref={titleRef} placeholder="タイトルで検索" />
+          <input type="text" ref={authorRef} placeholder="著者名で検索" />
+        </div>
+        <div className="button-like" onClick={handleSearchClick}>
+          検索
+        </div>
+      </div>
+      <div className="search-results">{bookItems}</div>
+    </div>
+  );
+
+ここまで実装したら画面を動かしてみて、書籍検索ダイアログがこれまでどおり動作すればOKです。
+
+なお、公式ドキュメントにあるとおり、refはDOM要素への参照を保持するだけでなく、あらゆる書き換え可能な値を保持しておくのに使えます。また、その中身が変更になってもそのことを通知しないので、コンポーネントの再レンダリングは発生しません。
+そのような使用例も今後このチュートリアルに追加できればと思います。
+
+これでステップ5は終了です。この時点でのコードはこのようになっているはずです。

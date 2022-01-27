@@ -61,7 +61,7 @@ const App = () => {
     const newBook: BookToRead = { ...book, id: Date.now(), memo: "" };
     const newBooks = [...books, newBook];
     setBooks(newBooks);
-    setModalIsOpen(false);
+    // setModalIsOpen(false);
   }
 
   const handleBookDelete = (id: number) => {
